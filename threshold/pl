@@ -1,0 +1,5 @@
+#!/bin/sh
+# Run a project step from the terminal: ./pl help
+cd "$(dirname "$0")"
+[ -f .env ] && { set -a; . ./.env; set +a; }
+exec .venv/bin/python plotline/cli.py "$@"

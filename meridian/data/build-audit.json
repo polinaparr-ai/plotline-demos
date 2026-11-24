@@ -1,0 +1,38 @@
+{
+  "source_rows": 1067371,
+  "ledger_rows": 996028,
+  "customers": 5824,
+  "train_n": 2652,
+  "test_n": 2658,
+  "sql_sha256": {
+    "01_ledger.sql": "6ac83374dbf7d35c3e4c42e946a28666aab79d8311a9e2b0861384b57add2491",
+    "10_summary.sql": "d1385f54f5ae9d4ca48277460af750be9201f2f7d5205dbc687cb8557452a345",
+    "11_daily.sql": "25103d3176be0e5f0567abe3de0d0ac753da5af58a1da6a9f5cccee18e32bee4",
+    "12_countries.sql": "0bb96eadc931ccc3f693efd3415a0a4f50aea302cf3daaaf3fb37bdb4ab97c58",
+    "13_products.sql": "437e5bc2e300bbb1a7580e3a0bfe329d7554067fd8abcd07974d247c08cca8f0",
+    "20_customers.sql": "ba2663912cf4f0476d05a75e26fd790d9a01cf2c9e9db6ba0f526c3c7f49517e",
+    "21_cohorts.sql": "c8c1debe9cbd064ee9eb7a6a3b0fb237d5aa14c3ae1e103ea665be3479040666",
+    "22_value_flow.sql": "d33c84a8e504736fb4964f49ef3bb72ed822674e7ef8de84f687995dfe8d3a4a",
+    "30_model_features.sql": "35d35fc6e18566cf4d31341d0dfd9e0633a0df66cff0bd76652aad0458ef3b27",
+    "40_checks.sql": "c30afc4408eb94aee2981991338fec2d5c8de5fbec22f2a97a13ee2753b3d1df",
+    "50_affinity.sql": "221becf3912cf1f0d2e2d254c198d215e24852ac1efc41e345bf88a79d5cbed5",
+    "60_weekly.sql": "1f962edd2fedd24f4ce7b08aba843918e9dc2e8e191b5c5c11214481ea0a954e"
+  },
+  "html_bytes": 2895630,
+  "model_metrics": {
+    "forest": {
+      "auc": 0.7506912990307094,
+      "ap": 0.77892925169679,
+      "brier": 0.1997188018453624,
+      "unseen_auc": 0.7358135686707116,
+      "mean_predicted": 0.48558607532346354
+    },
+    "logistic": {
+      "auc": 0.7522301612464897,
+      "ap": 0.7813284601406005,
+      "brier": 0.1995911629205509,
+      "unseen_auc": 0.7354412575841147,
+      "mean_predicted": 0.48720371404360174
+    }
+  }
+}

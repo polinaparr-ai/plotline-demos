@@ -1,0 +1,562 @@
+<title>Plotline Signals</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a night-desk editorial scroll. Wide charts break out of a 640px reading column; one cone motif throughout. */
+:root {
+  --bg: #f3f5fa; --bg-2: #e9edf6; --panel: #ffffff; --ink: #0c1222; --ink-2: #47506a; --ink-3: #7a839b;
+  --rule: #dde2ee; --grid: #e8ecf4;
+  --cone-a: #5b4bd6; --cone-b: #1c9fd0; --cone: #3f6fd8;
+  --pos: #1c9fd0; --neg: #e2603f; --hit: #0f9d6a; --live: #c98500;
+  --f-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --f-body: "Instrument Sans", system-ui, -apple-system, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #090d18; --bg-2: #0e1424; --panel: #101729; --ink: #eef1f8; --ink-2: #a9b2c8; --ink-3: #6e7892;
+  --rule: #1e2740; --grid: #182036;
+  --cone-a: #8b7dff; --cone-b: #3fd0f5; --cone: #6f8dff;
+  --pos: #3fd0f5; --neg: #ff7a59; --hit: #34d399; --live: #fbbf24; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #090d18; --bg-2: #0e1424; --panel: #101729; --ink: #eef1f8; --ink-2: #a9b2c8; --ink-3: #6e7892;
+  --rule: #1e2740; --grid: #182036;
+  --cone-a: #8b7dff; --cone-b: #3fd0f5; --cone: #6f8dff;
+  --pos: #3fd0f5; --neg: #ff7a59; --hit: #34d399; --live: #fbbf24; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.6 var(--f-body); -webkit-font-smoothing: antialiased; }
+.sec { padding-block: 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.sec + .sec { border-top: 1px solid var(--rule); }
+.inner { max-width: 1080px; margin: 0 auto; display: grid; gap: 22px; }
+.read { max-width: 640px; display: grid; gap: 12px; }
+.eyebrow { font: 500 12px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 0; }
+h1, h2 { font-family: var(--f-display); margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
+h1 { font-size: clamp(40px, 7.2vw, 84px); line-height: .95; font-weight: 800; }
+h2 { font-size: clamp(28px, 4.2vw, 44px); line-height: 1.02; font-weight: 700; }
+h1 em, h2 em { font-style: normal; background: linear-gradient(90deg, var(--cone-a), var(--cone-b)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+p { margin: 0; color: var(--ink-2); }
+.dek { font-size: clamp(17px, 2vw, 20px); line-height: 1.5; color: var(--ink-2); max-width: 600px; }
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+strong { color: var(--ink); font-weight: 600; }
+
+.hero { background: radial-gradient(1200px 500px at 70% -10%, color-mix(in oklab, var(--cone-a) 22%, transparent), transparent 70%), var(--bg);
+  margin-top: calc(-1 * env(safe-area-inset-top, 0px)); padding-top: calc(env(safe-area-inset-top, 0px) + 56px); }
+
+.figure { background: var(--panel); border: 1px solid var(--rule); border-radius: 16px; padding: 18px 18px 12px; display: grid; gap: 10px; min-width: 0; }
+.fig-head { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: baseline; justify-content: space-between; }
+.fig-title { font: 600 14px var(--f-body); color: var(--ink); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--ink-2); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.sw-cone { width: 10px; height: 16px; border-radius: 5px; background: linear-gradient(var(--cone-a), var(--cone-b)); opacity: .75; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.key { width: 16px; height: 2px; border-radius: 1px; display: inline-block; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { fill: var(--ink-3); font: 11px var(--f-mono); }
+.chart .lbl { fill: var(--ink-2); font: 500 11.5px var(--f-body); }
+.chart .ann { fill: var(--ink); font: 600 12px var(--f-body); }
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 9px 11px; font-size: 12.5px; box-shadow: 0 10px 30px rgba(0,0,0,.25); display: grid; gap: 3px; min-width: 180px; z-index: 5; }
+.tip[hidden] { display: none; }
+.tip .r { display: flex; justify-content: space-between; gap: 16px; color: var(--ink-2); }
+.tip .r b { font: 500 12px var(--f-mono); color: var(--ink); }
+.tip .t { font: 700 15px var(--f-display); color: var(--ink); }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.stat { display: grid; gap: 4px; padding: 16px; border-radius: 14px; background: var(--bg-2); }
+.stat b { font: 700 clamp(30px, 4vw, 40px)/1 var(--f-display); letter-spacing: -0.02em; }
+.stat span { font-size: 13.5px; color: var(--ink-2); }
+.stat.pos b { color: var(--pos); } .stat.neg b { color: var(--neg); }
+
+.board { display: grid; gap: 14px; }
+.grp { display: grid; gap: 6px; }
+.grp h3 { margin: 0; font: 500 11.5px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.tiles { display: flex; flex-wrap: wrap; gap: 4px; }
+.tile { all: unset; box-sizing: border-box; cursor: pointer; width: 74px; padding: 6px 7px; border-radius: 8px; display: grid; gap: 0; position: relative;
+  border: 1px solid transparent; }
+.tile b { font: 700 13.5px var(--f-display); color: var(--ink); }
+.tile span { font: 400 11px var(--f-mono); color: var(--ink-2); }
+.tile.top { border-color: var(--pos); }
+.tile.bot { border-color: var(--neg); }
+.tile:hover, .tile:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+.scale { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-3); }
+.scale i { width: 140px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--neg), var(--bg-2), var(--pos)); }
+
+.ctrls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+select, .seg button { font: 500 13.5px var(--f-body); color: var(--ink); background: var(--bg-2); border: 1px solid var(--rule); border-radius: 9px; padding: 7px 11px; }
+.seg { display: inline-flex; border-radius: 9px; overflow: hidden; border: 1px solid var(--rule); }
+.seg button { border: 0; border-radius: 0; cursor: pointer; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+select:focus-visible, .seg button:focus-visible { outline: 2px solid var(--cone); outline-offset: 2px; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 820px) { .two { grid-template-columns: 1fr; } .sec { padding-block: 40px; } }
+.col { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.col h3 { margin: 0 0 2px; font: 600 15px var(--f-body); display: flex; gap: 8px; align-items: baseline; }
+.col h3 span { font: 400 12.5px var(--f-mono); color: var(--ink-3); }
+.card { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 6px; padding: 12px 14px; border-radius: 12px; background: var(--panel); border: 1px solid var(--rule); min-width: 0; }
+.card:hover, .card:focus-visible { border-color: var(--ink-3); }
+.card .top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.card .tk { font: 700 17px var(--f-display); }
+.card .tk small { font: 400 12.5px var(--f-body); color: var(--ink-3); margin-left: 6px; }
+.card .call { font: 500 13px var(--f-mono); }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--bg-2); color: var(--ink-2); white-space: nowrap; }
+.chip.buy { color: var(--hit); background: color-mix(in oklab, var(--hit) 14%, var(--bg-2)); }
+.chip.sell { color: var(--neg); background: color-mix(in oklab, var(--neg) 12%, var(--bg-2)); }
+.chip.earn { color: var(--live); background: color-mix(in oklab, var(--live) 14%, var(--bg-2)); }
+.news { font-size: 13px; color: var(--ink-2); line-height: 1.45; overflow-wrap: anywhere; }
+.news i { font-style: normal; color: var(--ink-3); font-family: var(--f-mono); font-size: 11.5px; }
+.why { font-size: 13.5px; color: var(--ink); line-height: 1.45; }
+.fit { font: 500 11px var(--f-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); }
+footer { color: var(--ink-3); font-size: 13px; }
+footer p { color: var(--ink-3); max-width: 720px; }
+.fall { transition: transform 1.4s cubic-bezier(.2,.7,.2,1); }
+@media (prefers-reduced-motion: reduce) { .fall { transition: none; } }
+</style>
+
+<section class="sec hero">
+  <div class="inner">
+    <div class="read">
+      <p class="eyebrow" id="eyebrow">Plotline Signals</p>
+      <h1>The week the <em>cones</em> broke</h1>
+      <p class="dek" id="dek">Every Friday, a model draws a cone around where each of 101 big US stocks should land a week later.</p>
+    </div>
+    <figure class="figure" style="margin:0">
+      <div class="fig-head">
+        <span class="fig-title" id="heroTitle">Predicted range vs actual move</span>
+        <div class="legend">
+          <span><span class="sw-cone"></span>Predicted range (80%)</span>
+          <span><span class="dot" style="background:var(--neg)"></span>Fell below it</span>
+          <span><span class="dot" style="background:var(--ink-3)"></span>Landed inside</span>
+        </div>
+      </div>
+      <div class="chart" id="hero"></div>
+    </figure>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="inner">
+    <div class="read">
+      <p class="eyebrow">Monday</p>
+      <h2>Then Nvidia rose <em>31.5%</em> in a day</h2>
+      <p id="nvText"></p>
+    </div>
+    <figure class="figure" style="margin:0">
+      <div class="fig-head">
+        <span class="fig-title">Nvidia daily close, with the model's two latest cones</span>
+        <div class="legend">
+          <span><span class="key" style="background:var(--ink)"></span>Close</span>
+          <span><span class="sw-cone"></span>Last week's cone</span>
+          <span><span class="sw-cone" style="background:var(--live)"></span>This week's cone</span>
+        </div>
+      </div>
+      <div class="chart" id="nvda"></div>
+    </figure>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="inner">
+    <div class="read">
+      <p class="eyebrow">This week's bet</p>
+      <h2>Buy <em>what broke</em></h2>
+      <p id="betText"></p>
+    </div>
+    <div class="stats" id="betStats"></div>
+    <figure class="figure" style="margin:0">
+      <div class="fig-head">
+        <span class="fig-title">All 101 stocks, coloured by the model's call for the week</span>
+        <div class="scale"><span>Expects to lag</span><i></i><span>Expects to lead</span></div>
+      </div>
+      <div class="board" id="board"></div>
+    </figure>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="inner">
+    <div class="read">
+      <p class="eyebrow">What it knows</p>
+      <h2>The filings and headlines <em>behind the picks</em></h2>
+      <p>Insider trades and company filings come from the SEC, each counted only from the day it became public. Headlines are from the past week.</p>
+    </div>
+    <div class="two" id="knows"></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="inner">
+    <div class="read">
+      <p class="eyebrow">What the filings taught it</p>
+      <h2>Not smarter. <em>Better at being nervous.</em></h2>
+      <p id="learnText"></p>
+    </div>
+    <div class="stats" id="learnStats"></div>
+    <figure class="figure" style="margin:0">
+      <div class="fig-head"><span class="fig-title">Share of outcomes inside an 80% cone, 2019–2026</span>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--ink-3)"></span>Prices only</span>
+          <span><span class="sw-cone"></span>Prices + filings</span>
+          <span><span class="key" style="background:var(--ink-2)"></span>80% target</span>
+        </div></div>
+      <div class="chart" id="learn"></div>
+    </figure>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="inner">
+    <div class="read">
+      <p class="eyebrow">Pick any stock</p>
+      <h2>One cone a week, <em>every stock</em></h2>
+      <p>Each fan opens from Friday's close to the range the model expected a week later. Dots mark weeks the price escaped it.</p>
+    </div>
+    <figure class="figure" style="margin:0">
+      <div class="fig-head">
+        <div class="ctrls">
+          <select id="ticker" aria-label="Stock"></select>
+          <div class="seg" role="group" aria-label="Time range" id="range">
+            <button type="button" data-w="26">6M</button>
+            <button type="button" data-w="52" aria-pressed="true">1Y</button>
+            <button type="button" data-w="999">Since 2023</button>
+          </div>
+        </div>
+        <div class="legend">
+          <span><span class="sw-cone"></span>Predicted range</span>
+          <span><span class="dot" style="background:var(--neg)"></span>Fell below</span>
+          <span><span class="dot" style="background:var(--hit)"></span>Rose above</span>
+          <span><span class="sw-cone" style="background:var(--live)"></span>This week</span>
+        </div>
+      </div>
+      <div class="chart" id="fan"></div>
+      <p id="fanNote" style="font-size:13.5px"></p>
+    </figure>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="inner">
+    <div class="read">
+      <p class="eyebrow">Is it any good?</p>
+      <h2>Honest about risk, <em>modest</em> on direction</h2>
+      <p id="recText"></p>
+    </div>
+    <div class="stats" id="recStats"></div>
+    <div class="two">
+      <figure class="figure" style="margin:0">
+        <div class="fig-head"><span class="fig-title">Share of stocks inside their cone, each week</span>
+          <div class="legend"><span><span class="key" style="background:var(--ink-2)"></span>80% target</span></div></div>
+        <div class="chart" id="cov"></div>
+      </figure>
+      <figure class="figure" style="margin:0">
+        <div class="fig-head"><span class="fig-title">$1 held in each group, rebuilt weekly</span>
+          <div class="legend">
+            <span><span class="key" style="background:var(--pos)"></span>Top 10</span>
+            <span><span class="key" style="background:var(--ink-3)"></span>All 101</span>
+            <span><span class="key" style="background:var(--neg)"></span>Bottom 10</span>
+          </div></div>
+        <div class="chart" id="race"></div>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="inner">
+    <div class="read">
+      <p class="eyebrow">Next</p>
+      <h2>From counting filings to <em>reading them</em></h2>
+      <p>The model counts filings and insider trades. It doesn't yet read what they say. Next, Claude reads each earnings release and week of headlines and turns them into signals the model can test, such as a guidance cut, a surprise departure or a big contract, each stamped with when it became public.</p>
+    </div>
+    <footer>
+      <p id="foot"></p>
+    </footer>
+  </div>
+</section>
+
+<script>
+const NS = "http://www.w3.org/2000/svg";
+const S = (tag, a = {}, p) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+const H = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const pct = (v, d = 1) => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(d) + "%";
+const usd = v => "$" + v.toFixed(2);
+const day = (s, o = { day: "numeric", month: "short" }) => new Date(s + "T00:00:00Z").toLocaleDateString("en-GB", { ...o, timeZone: "UTC" });
+const SHORT = { "Chips": "Chips", "Software & web": "Software", "Retail & consumer": "Consumer", "Staples": "Staples", "Health": "Health", "Finance": "Finance", "Industrials": "Industrials", "Energy, utilities & other": "Energy+" };
+const SECTORS = Object.keys(SHORT);
+function ticks(lo, hi, n = 5) { const sp = hi - lo, m = 10 ** Math.floor(Math.log10(sp / n)); const st = [1, 2, 2.5, 5, 10].map(x => x * m).find(s => sp / s <= n); const t = []; for (let v = Math.ceil(lo / st) * st; v <= hi + 1e-9; v += st) t.push(+v.toFixed(8)); return t; }
+function tipper(host) {
+  const t = H("div", "tip"); t.hidden = true; host.appendChild(t);
+  return { show(x, y, kids) { t.replaceChildren(...kids); t.hidden = false; const w = t.offsetWidth; t.style.left = Math.max(0, Math.min(host.clientWidth - w, x + 14)) + "px"; t.style.top = Math.max(0, y - t.offsetHeight - 12) + "px"; }, hide() { t.hidden = true; } };
+}
+const row = (l, v) => { const r = H("div", "r"); r.append(H("span", null, l), H("b", null, v)); return r; };
+function coneGrad(svg, id, a, b, peak = .7) {
+  const defs = S("defs", {}, svg), g = S("linearGradient", { id, x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+  [[0, a, .15], [.5, b, peak], [1, a, .15]].forEach(([o, c, op]) => S("stop", { offset: o, "stop-color": c, "stop-opacity": op }, g));
+  return `url(#${id})`;
+}
+function frame(host, hRatio, hMin, hMax, m) {
+  host.replaceChildren(); const W = host.clientWidth, Hh = Math.round(Math.min(hMax, Math.max(hMin, W * hRatio)));
+  const svg = S("svg", { viewBox: `0 0 ${W} ${Hh}`, height: Hh }, host);
+  return { svg, W, H: Hh, iw: W - m.l - m.r, ih: Hh - m.t - m.b };
+}
+const yAxis = (svg, m, iw, y, tk, fmt) => tk.forEach(v => { S("line", { x1: m.l, x2: m.l + iw, y1: y(v), y2: y(v), stroke: css(v === 0 ? "--ink-3" : "--grid"), "stroke-width": 1 }, svg); S("text", { x: m.l - 8, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = fmt(v); });
+
+let D, firstHero = true, state = { t: "NVDA", w: 52 };
+
+/* ---------- hero: last week's cones vs actual ---------- */
+function drawHero() {
+  const host = document.getElementById("hero"), narrow = host.clientWidth < 560;
+  const m = { t: 12, r: 8, b: 30, l: 42 }, f = frame(host, .4, 280, 420, m), { svg, iw, ih } = f;
+  const L = D.last_week, st = [...L.stocks].sort((a, b) => SECTORS.indexOf(a.s) - SECTORS.indexOf(b.s) || a.y - b.y);
+  const gap = narrow ? 4 : 10, groups = SECTORS.filter(s => st.some(x => x.s === s));
+  const slot = (iw - gap * (groups.length - 1)) / st.length;
+  const vals = st.flatMap(s => [s.lo, s.hi, s.y]); const lo = Math.floor(Math.min(...vals) / 5) * 5, hi = Math.ceil(Math.max(...vals) / 5) * 5;
+  const y = v => m.t + ih - (v - lo) / (hi - lo) * ih;
+  yAxis(svg, m, iw, y, ticks(lo, hi, 6), v => (v > 0 ? "+" : "") + v + "%");
+  const fill = coneGrad(svg, "hg", css("--cone-a"), css("--cone-b"), .8);
+  let x0 = m.l, prev = null; const pos = [];
+  st.forEach(s => {
+    if (prev && prev !== s.s) { x0 += gap; }
+    if (prev !== s.s) { const n = st.filter(z => z.s === s.s).length; S("text", { x: x0 + n * slot / 2, y: f.H - 8, "text-anchor": "middle", class: "lbl" }, svg).textContent = narrow ? SHORT[s.s].slice(0, 4) : SHORT[s.s]; }
+    pos.push(x0 + slot / 2); x0 += slot; prev = s.s;
+  });
+  const bw = Math.max(2, slot * .62), r = Math.max(2.2, Math.min(4.2, slot * .34));
+  st.forEach((s, i) => S("rect", { x: pos[i] - bw / 2, y: y(s.hi), width: bw, height: y(s.lo) - y(s.hi), rx: bw / 2, fill }, svg));
+  const dots = st.map((s, i) => {
+    const below = s.y < s.lo, above = s.y > s.hi;
+    const c = S("circle", { cx: pos[i], cy: y(s.y), r, fill: css(below ? "--neg" : above ? "--hit" : "--ink-3"), stroke: css("--panel"), "stroke-width": 1.5, class: "fall" }, svg);
+    if (firstHero) c.style.transform = `translateY(${y(s.mid) - y(s.y)}px)`;
+    return c;
+  });
+  if (firstHero) { firstHero = false; requestAnimationFrame(() => requestAnimationFrame(() => dots.forEach((d, i) => { d.style.transitionDelay = (i * 6) + "ms"; d.style.transform = "translateY(0)"; }))); }
+  const tp = tipper(host), hit = S("rect", { x: m.l, y: m.t, width: iw, height: ih, fill: "transparent" }, svg);
+  hit.addEventListener("pointermove", e => {
+    const b = svg.getBoundingClientRect(), px = (e.clientX - b.left) * f.W / b.width;
+    let i = 0, best = 1e9; pos.forEach((p, j) => { if (Math.abs(p - px) < best) { best = Math.abs(p - px); i = j; } });
+    const s = st[i]; tp.show(pos[i] * b.width / f.W, y(Math.max(s.hi, s.y)) * b.height / f.H, [H("div", "t", s.t), row("Expected", pct(s.lo) + " to " + pct(s.hi)), row("Actual", pct(s.y)), row("Sector", SHORT[s.s])]);
+  });
+  hit.addEventListener("pointerleave", () => tp.hide());
+}
+
+/* ---------- NVDA ---------- */
+function drawNvda() {
+  const host = document.getElementById("nvda"), N = D.nvda, m = { t: 14, r: 64, b: 28, l: 50 }, f = frame(host, .36, 240, 360, m), { svg, iw, ih } = f;
+  const dates = N.daily.map(d => d.d), last = dates[dates.length - 1];
+  // extend x to the end of the live cone (Friday after live start)
+  const end = new Date(N.cones[1].from + "T00:00:00Z"); end.setUTCDate(end.getUTCDate() + 7);
+  const t0 = Date.parse(dates[0]), t1 = end.getTime(), x = d => m.l + (Date.parse(d) - t0) / (t1 - t0) * iw;
+  const vals = N.daily.map(d => d.c).concat(N.cones.flatMap(c => [c.lo, c.hi])); const lo = Math.min(...vals) * .96, hi = Math.max(...vals) * 1.03;
+  const y = v => m.t + ih - (v - lo) / (hi - lo) * ih;
+  yAxis(svg, m, iw, y, ticks(lo, hi, 5), v => "$" + v);
+  N.daily.forEach(d => { if (new Date(d.d + "T00:00:00Z").getUTCDay() === 1) S("text", { x: x(d.d), y: f.H - 8, "text-anchor": "middle" }, svg).textContent = day(d.d); });
+  const g1 = coneGrad(svg, "ng1", css("--cone-a"), css("--cone-b"), .55), g2 = coneGrad(svg, "ng2", css("--live"), css("--live"), .45);
+  N.cones.forEach((c, i) => {
+    const e = new Date(c.from + "T00:00:00Z"); e.setUTCDate(e.getUTCDate() + 7); const xe = x(e.toISOString().slice(0, 10)), xs = x(c.from);
+    S("path", { d: `M${xs},${y(c.base)} L${xe},${y(c.hi)} L${xe},${y(c.lo)} Z`, fill: i ? g2 : g1 }, svg);
+    S("text", { x: xe + 6, y: y(c.hi) + 4 }, svg).textContent = "$" + Math.round(c.hi);
+    S("text", { x: xe + 6, y: y(c.lo) + 4 }, svg).textContent = "$" + Math.round(c.lo);
+  });
+  S("path", { d: N.daily.map((d, i) => (i ? "L" : "M") + x(d.d) + "," + y(d.c)).join(""), fill: "none", stroke: css("--ink"), "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+  const fri = N.daily.find(d => d.d === N.cones[1].from), mon = N.daily[N.daily.indexOf(fri) + 1];
+  [[fri, "−14.0% Fri", "--neg", 18], [mon, "+31.5% Mon", "--hit", -12]].forEach(([d, t, c, dy]) => {
+    if (!d) return; S("circle", { cx: x(d.d), cy: y(d.c), r: 5, fill: css(c), stroke: css("--panel"), "stroke-width": 2 }, svg);
+    S("text", { x: x(d.d) + (dy > 0 ? -8 : -8), y: y(d.c) + dy, "text-anchor": "end", class: "ann" }, svg).textContent = t;
+  });
+  const tp = tipper(host), hit = S("rect", { x: m.l, y: m.t, width: iw, height: ih, fill: "transparent" }, svg);
+  hit.addEventListener("pointermove", e => {
+    const b = svg.getBoundingClientRect(), px = (e.clientX - b.left) * f.W / b.width;
+    let best = N.daily[0]; N.daily.forEach(d => { if (Math.abs(x(d.d) - px) < Math.abs(x(best.d) - px)) best = d; });
+    const i = N.daily.indexOf(best), ch = i ? (best.c / N.daily[i - 1].c - 1) * 100 : 0;
+    tp.show(x(best.d) * b.width / f.W, y(best.c) * b.height / f.H, [H("div", "t", day(best.d, { weekday: "short", day: "numeric", month: "short" })), row("Close", usd(best.c)), row("Day", pct(ch))]);
+  });
+  hit.addEventListener("pointerleave", () => tp.hide());
+}
+
+/* ---------- board ---------- */
+function drawBoard() {
+  const L = D.live, host = document.getElementById("board"); host.replaceChildren();
+  const max = Math.max(...L.stocks.map(s => Math.abs(s.ex)));
+  const tp = tipper(host.parentElement);
+  SECTORS.forEach(sec => {
+    const ss = L.stocks.filter(s => s.s === sec).sort((a, b) => b.ex - a.ex); if (!ss.length) return;
+    const g = H("div", "grp"), tl = H("div", "tiles"); g.append(H("h3", null, sec), tl);
+    ss.forEach(s => {
+      const b = H("button", "tile" + (L.top.includes(s.t) ? " top" : L.bottom.includes(s.t) ? " bot" : "")); b.type = "button";
+      const k = Math.min(1, Math.abs(s.ex) / max), c = s.ex >= 0 ? "--pos" : "--neg";
+      b.style.background = `color-mix(in oklab, var(${c}) ${Math.round(8 + k * 52)}%, var(--bg-2))`;
+      b.append(H("b", null, s.t), H("span", null, pct(s.ex, 1)));
+      const show = () => { const r = b.getBoundingClientRect(), pr = host.parentElement.getBoundingClientRect();
+        tp.show(r.left - pr.left, r.top - pr.top, [H("div", "t", s.t + (s.rank < 10 ? "  ·  #" + (s.rank + 1) : "")), row("Call vs average stock", pct(s.ex, 2)), row("Expected range", pct(s.lo) + " to " + pct(s.hi)), row("So far this week", pct(s.sofar)), ...intelChips(s.t).map(([, txt]) => H("div", "r", txt))]); };
+      b.addEventListener("pointerenter", show); b.addEventListener("focus", show);
+      b.addEventListener("pointerleave", () => tp.hide()); b.addEventListener("blur", () => tp.hide());
+      b.addEventListener("click", () => { state.t = s.t; document.getElementById("ticker").value = s.t; drawFan(); document.getElementById("fan").scrollIntoView({ behavior: "smooth", block: "center" }); });
+      tl.appendChild(b);
+    });
+    host.appendChild(g);
+  });
+}
+
+/* ---------- fan explorer ---------- */
+function drawFan() {
+  const host = document.getElementById("fan"), all = D.stocks[state.t].w, v = all.slice(-state.w);
+  const n = v.length + 1, m = { t: 14, r: 56, b: 28, l: 54 }, f = frame(host, .38, 260, 400, m), { svg, iw, ih } = f;
+  const x = i => m.l + i / (n - 1) * iw;
+  const vals = v.flatMap(r => [r.c, ...(r.q ? [r.q[0], r.q[2]] : [])]); const lo = Math.min(...vals) * .97, hi = Math.max(...vals) * 1.02;
+  const y = p => m.t + ih - (p - lo) / (hi - lo) * ih;
+  yAxis(svg, m, iw, y, ticks(lo, hi, 5), p => "$" + (p >= 1000 ? p.toLocaleString("en-US") : p));
+  let lastM = null; const every = state.w <= 26 ? 1 : state.w <= 52 ? 2 : 6;
+  v.forEach((r, i) => { const mo = +r.d.slice(5, 7); if (mo !== lastM) { if (lastM !== null && (mo - 1) % every === 0) S("text", { x: x(i), y: f.H - 8, "text-anchor": "middle" }, svg).textContent = day(r.d, { month: "short" }) + (mo === 1 ? " " + r.d.slice(2, 4) : ""); lastM = mo; } });
+  const g = coneGrad(svg, "fg", css("--cone-a"), css("--cone-b"), .42), gl = coneGrad(svg, "fl", css("--live"), css("--live"), .55);
+  let below = 0, above = 0, scored = 0;
+  v.forEach((r, i) => {
+    if (!r.q) return; const live = i === v.length - 1;
+    S("path", { d: `M${x(i)},${y(r.c)} L${x(i + 1)},${y(r.q[2])} L${x(i + 1)},${y(r.q[0])} Z`, fill: live ? gl : g }, svg);
+    if (live) { S("text", { x: x(i + 1) + 6, y: y(r.q[2]) + 4 }, svg).textContent = usd(r.q[2]); S("text", { x: x(i + 1) + 6, y: y(r.q[0]) + 4 }, svg).textContent = usd(r.q[0]); }
+  });
+  S("path", { d: v.map((r, i) => (i ? "L" : "M") + x(i) + "," + y(r.c)).join(""), fill: "none", stroke: css("--ink"), "stroke-width": 1.8, "stroke-linejoin": "round" }, svg);
+  v.forEach((r, i) => { if (!i || !v[i - 1].q) return; const q = v[i - 1].q; scored++;
+    if (r.c < q[0] || r.c > q[2]) { r.c < q[0] ? below++ : above++; S("circle", { cx: x(i), cy: y(r.c), r: 3.6, fill: css(r.c < q[0] ? "--neg" : "--hit"), stroke: css("--panel"), "stroke-width": 1.5 }, svg); } });
+  const tp = tipper(host), hit = S("rect", { x: m.l, y: m.t, width: iw, height: ih, fill: "transparent" }, svg);
+  hit.addEventListener("pointermove", e => {
+    const b = svg.getBoundingClientRect(), px = (e.clientX - b.left) * f.W / b.width, i = Math.max(0, Math.min(v.length - 1, Math.round((px - m.l) / iw * (n - 1)))), r = v[i], p = v[i - 1];
+    const kids = [H("div", "t", state.t + " · " + day(r.d, { day: "numeric", month: "short", year: "numeric" })), row("Close", usd(r.c))];
+    if (p && p.q) kids.push(row("Expected", usd(p.q[0]) + "–" + usd(p.q[2])), row("Result", r.c < p.q[0] ? "Below range" : r.c > p.q[2] ? "Above range" : "Inside"));
+    if (i === v.length - 1 && r.q) kids.push(row("Next week", usd(r.q[0]) + "–" + usd(r.q[2])));
+    tp.show(x(i) * b.width / f.W, y(r.c) * b.height / f.H, kids);
+  });
+  hit.addEventListener("pointerleave", () => tp.hide());
+  document.getElementById("fanNote").textContent = `${state.t}: ${scored - below - above} of ${scored} weeks landed inside the cone. ${below} fell below, ${above} rose above.`;
+}
+
+/* ---------- coverage barcode ---------- */
+function drawCov() {
+  const host = document.getElementById("cov"), w = D.weeks, m = { t: 22, r: 6, b: 26, l: 38 }, f = frame(host, .5, 220, 300, m), { svg, iw, ih } = f;
+  const y = v => m.t + ih - v * ih, bw = iw / w.length;
+  yAxis(svg, m, iw, y, [0, .5, 1], v => v * 100 + "%");
+  w.forEach((r, i) => S("rect", { x: m.l + i * bw, y: y(r.cov), width: Math.max(1, bw - .4), height: ih - (y(r.cov) - m.t), fill: css(r.cov < .5 ? "--neg" : "--cone"), "fill-opacity": r.cov < .5 ? .95 : .45 }, svg));
+  S("line", { x1: m.l, x2: m.l + iw, y1: y(.8), y2: y(.8), stroke: css("--ink-2"), "stroke-width": 1.25 }, svg);
+  let ly = null; w.forEach((r, i) => { const yr = r.d.slice(0, 4); if (yr !== ly) { ly = yr; if (i) S("text", { x: m.l + i * bw, y: f.H - 8, "text-anchor": "middle" }, svg).textContent = "'" + yr.slice(2); } });
+  // label the worst week in each crash episode
+  const eps = {}; w.forEach((r, i) => { if (r.cov < .3) { const k = r.d.slice(0, 4); if (!eps[k] || r.cov < eps[k].r.cov) eps[k] = { r, i }; } });
+  Object.values(eps).forEach(({ r, i }) => S("text", { x: m.l + i * bw, y: m.t - 8, "text-anchor": "middle", class: "lbl" }, svg).textContent = day(r.d, { month: "short", year: "2-digit" }).replace(" ", " '"));
+  const tp = tipper(host), hit = S("rect", { x: m.l, y: m.t, width: iw, height: ih, fill: "transparent" }, svg);
+  hit.addEventListener("pointermove", e => { const b = svg.getBoundingClientRect(), px = (e.clientX - b.left) * f.W / b.width, i = Math.max(0, Math.min(w.length - 1, Math.floor((px - m.l) / bw))), r = w[i];
+    tp.show((m.l + i * bw) * b.width / f.W, y(r.cov) * b.height / f.H, [H("div", "t", "Week from " + day(r.d, { day: "numeric", month: "short", year: "numeric" })), row("Inside cone", Math.round(r.cov * 100) + "%"), row("Average stock", pct(r.ret))]); });
+  hit.addEventListener("pointerleave", () => tp.hide());
+}
+
+/* ---------- race ---------- */
+function drawRace() {
+  const host = document.getElementById("race"), R = D.record.race, m = { t: 22, r: 70, b: 26, l: 40 }, f = frame(host, .5, 220, 300, m), { svg, iw, ih } = f;
+  const data = [{ d: R[0].d, top: 1, all: 1, bot: 1 }, ...R], n = data.length, mx = Math.max(...data.map(r => r.top));
+  const x = i => m.l + i / (n - 1) * iw, y = v => m.t + ih - v / mx * ih * .96;
+  yAxis(svg, m, iw, y, ticks(0, mx, 4), v => "$" + v);
+  let ly = null; data.forEach((r, i) => { const yr = r.d.slice(0, 4); if (yr !== ly) { ly = yr; if (i) S("text", { x: x(i), y: f.H - 8, "text-anchor": "middle" }, svg).textContent = "'" + yr.slice(2); } });
+  const L = [["top", "--pos", "Top 10"], ["all", "--ink-3", "All 101"], ["bot", "--neg", "Bottom 10"]];
+  L.forEach(([k, c]) => S("path", { d: data.map((r, i) => (i ? "L" : "M") + x(i).toFixed(1) + "," + y(r[k]).toFixed(1)).join(""), fill: "none", stroke: css(c), "stroke-width": k === "top" ? 2.4 : 1.8, "stroke-linejoin": "round" }, svg));
+  const ends = L.map(([k, c, nm]) => ({ k, c, nm, v: data[n - 1][k], yy: y(data[n - 1][k]) })).sort((a, b) => a.yy - b.yy);
+  for (let i = 1; i < ends.length; i++) if (ends[i].yy - ends[i - 1].yy < 14) ends[i].yy = ends[i - 1].yy + 14;
+  ends.forEach(e => { S("circle", { cx: x(n - 1), cy: y(e.v), r: 4, fill: css(e.c), stroke: css("--panel"), "stroke-width": 2 }, svg); S("text", { x: x(n - 1) + 8, y: e.yy + 4, class: "lbl" }, svg).textContent = "$" + e.v.toFixed(2); });
+  const cross = S("line", { y1: m.t, y2: m.t + ih, stroke: css("--ink-3"), visibility: "hidden" }, svg);
+  const tp = tipper(host), hit = S("rect", { x: m.l, y: m.t, width: iw, height: ih, fill: "transparent" }, svg);
+  hit.addEventListener("pointermove", e => { const b = svg.getBoundingClientRect(), px = (e.clientX - b.left) * f.W / b.width, i = Math.max(0, Math.min(n - 1, Math.round((px - m.l) / iw * (n - 1)))), r = data[i];
+    cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible");
+    tp.show(x(i) * b.width / f.W, (e.clientY - b.top), [H("div", "t", day(r.d, { month: "short", year: "numeric" })), row("Top 10", usd(r.top)), row("All 101", usd(r.all)), row("Bottom 10", usd(r.bot))]); });
+  hit.addEventListener("pointerleave", () => { tp.hide(); cross.setAttribute("visibility", "hidden"); });
+}
+
+const big$ = v => v >= 1e9 ? "$" + (v / 1e9).toFixed(1) + "bn" : v >= 1e6 ? "$" + (v / 1e6).toFixed(1) + "m" : "$" + Math.round(v / 1e3) + "k";
+function intelChips(t) {
+  const I = D.intel[t], out = [];
+  if (!I) return out;
+  if (I.buys) out.push(["buy", `${I.buyers} insider${I.buyers > 1 ? "s" : ""} bought ${big$(I.buy_usd)}`]);
+  if (I.sales) out.push(["", `Insiders sold ${big$(I.sale_usd)}`]);
+  if (I.earn_days != null) out.push(I.earn_days <= 14 ? ["", `Reported earnings ${I.earn_days} days ago`] : I.earn_days >= 75 ? ["earn", "Earnings likely due"] : ["", "Last earnings " + day(I.last_earn)]);
+  (I.tags || []).forEach(g => out.push(["", g + ", last 45 days"]));
+  if (!I.buys && !I.sales) out.push(["", "No insider trades, 90 days"]);
+  return out;
+}
+function drawKnows() {
+  const host = document.getElementById("knows"); host.replaceChildren();
+  const B = D.brief, V = D.live;
+  [["Top 10", V.top, "Expected to beat the average stock", "--pos"], ["Bottom 10", V.bottom, "Expected to lag it", "--neg"]].forEach(([nm, list, sub, c]) => {
+    const col = H("div", "col"), h3 = H("h3", null, nm); h3.appendChild(H("span", null, sub)); col.appendChild(h3);
+    list.forEach(t => {
+      const s = V.stocks.find(x => x.t === t), I = D.intel[t] || {}, card = H("button", "card"); card.type = "button";
+      const top = H("div", "top"), tk = H("span", "tk", t); if (I.name) tk.appendChild(H("small", null, I.name));
+      const call = H("span", "call", pct(s.ex, 2)); call.style.color = `var(${c})`; top.append(tk, call); card.appendChild(top);
+      if (B && B.stocks[t]) { card.appendChild(H("div", "why", B.stocks[t].why)); }
+      const ch = H("div", "chips"); intelChips(t).forEach(([k, txt]) => ch.appendChild(H("span", "chip " + k, txt))); card.appendChild(ch);
+      if (I.news && I.news.length) { const n = H("div", "news"); n.append(H("i", null, (I.news[0].source || "") + " · " + day(I.news[0].date.slice(0, 4) + "-" + I.news[0].date.slice(4, 6) + "-" + I.news[0].date.slice(6, 8)) + "  "), document.createTextNode(I.news[0].title)); card.appendChild(n); }
+      if (B && B.stocks[t]) card.appendChild(H("div", "fit", "Evidence " + B.stocks[t].fit + " the call"));
+      card.addEventListener("click", () => { state.t = t; document.getElementById("ticker").value = t; drawFan(); document.getElementById("fan").scrollIntoView({ behavior: "smooth", block: "center" }); });
+      col.appendChild(card);
+    });
+    host.appendChild(col);
+  });
+}
+function drawLearn() {
+  const host = document.getElementById("learn"), C = D.compare, m = { t: 8, r: 56, b: 24, l: 112 };
+  const rows = [["Earnings weeks", "earn_inside"], ["Other weeks", "other_inside"]];
+  const f = frame(host, .2, 170, 210, m), { svg, iw, ih } = f, x = v => m.l + v / 100 * iw, band = ih / rows.length, bh = Math.min(20, band * .3);
+  [0, 25, 50, 75, 100].forEach(v => { S("line", { x1: x(v), x2: x(v), y1: m.t, y2: m.t + ih, stroke: css("--grid") }, svg); S("text", { x: x(v), y: f.H - 6, "text-anchor": "middle" }, svg).textContent = v + "%"; });
+  const g = S("defs", {}, svg), lg = S("linearGradient", { id: "lg", x1: 0, x2: 1, y1: 0, y2: 0 }, g);
+  S("stop", { offset: 0, "stop-color": css("--cone-a") }, lg); S("stop", { offset: 1, "stop-color": css("--cone-b") }, lg);
+  rows.forEach(([lab, k], i) => {
+    const y0 = m.t + i * band + band / 2;
+    S("text", { x: m.l - 10, y: y0 + 4, "text-anchor": "end", class: "lbl" }, svg).textContent = lab;
+    [["price", css("--ink-3"), -1], ["intel", "url(#lg)", 1]].forEach(([v, fill, side]) => {
+      const val = C[v][k], yy = y0 + (side < 0 ? -bh - 2 : 2);
+      S("rect", { x: m.l, y: yy, width: x(val) - m.l, height: bh, rx: 4, fill }, svg);
+      S("text", { x: x(val) + 6, y: yy + bh / 2 + 4, class: "lbl" }, svg).textContent = val.toFixed(1) + "%";
+    });
+  });
+  S("line", { x1: x(80), x2: x(80), y1: m.t - 4, y2: m.t + ih, stroke: css("--ink-2"), "stroke-width": 1.5 }, svg);
+}
+
+function stat(host, big, label, cls) { const d = H("div", "stat" + (cls ? " " + cls : "")); d.append(H("b", "num", big), H("span", null, label)); host.appendChild(d); }
+
+function text() {
+  const L = D.last_week, V = D.live, R = D.record;
+  document.getElementById("eyebrow").textContent = "Plotline Signals · " + day(D.asof, { day: "numeric", month: "long", year: "numeric" });
+  document.getElementById("dek").textContent = `Every Friday, a model draws a cone around where each of 101 big US stocks should land a week later. In a normal week about ${L.normal_inside} land inside. In the week to ${day(L.to)}, ${L.n - L.below - L.above} did. ${L.below} fell straight through the floor.`;
+  document.getElementById("heroTitle").textContent = `Week of ${day(L.from)} to ${day(L.to)}: predicted range vs actual move, by sector`;
+  const nv = D.nvda.cones;
+  document.getElementById("nvText").textContent = `The model expected Nvidia to finish the week between $${Math.round(nv[0].lo)} and $${Math.round(nv[0].hi)}. It closed at $${nv[1].base.toFixed(2)}, its cone broken along with almost everyone else's. On Monday it jumped straight past the top of the new cone.`;
+  const since = V.wider_since ? day(V.wider_since, { month: "long", year: "numeric" }) : null;
+  const tech = V.top.filter(t => ["Chips", "Software & web"].includes(D.stocks[t].s)).length;
+  const nm = t => (D.intel[t] && D.intel[t].name) || t;
+  document.getElementById("betText").textContent = `${tech === 10 ? "All" : tech} of the model's top 10 for this week are chips and software stocks, among the ones that fell hardest. Its bottom 10 are steadier names like ${V.bottom.slice(2, 5).map(nm).join(", ").replace(/, ([^,]*)$/, " and $1")}. It is also nervous:`;
+  document.getElementById("betText").textContent += ` a typical cone now spans ±${(V.width / 2).toFixed(1)}%, against ±${(V.width_normal / 2).toFixed(1)}% normally${since ? ", the widest since " + since : ""}.`;
+  const C = D.compare;
+  document.getElementById("learnText").textContent = `Adding SEC filings didn't improve the direction calls: the rank correlation between predicted and actual moves was ${D.price_only.price.toFixed(3)} without them and ${D.price_only.intel.toFixed(3)} with them. What changed is risk. Stocks move almost twice as much in a week with an earnings report (${C.earn_move}% on average, against ${C.other_move}%). Prices alone can't see a report coming, so the old cones caught only ${C.price.earn_inside}% of earnings-week moves. Filings show when the last report landed, so the model widens its cone ahead of the next one.`;
+  const ls = document.getElementById("learnStats");
+  stat(ls, `${Math.round(C.price.earn_inside)}→${Math.round(C.intel.earn_inside)}%`, "Earnings-week moves inside the cone", "pos");
+  stat(ls, "+" + Math.round((C.intel.earn_width / C.price.earn_width - 1) * 100) + "%", "Wider cones in earnings weeks");
+  stat(ls, pct(C.cluster_ex, 2), `A week for stocks with 2+ insiders buying, vs ${pct(C.rest_ex, 2)} for the rest (${C.cluster_n.toLocaleString("en-US")} cases)`);
+  const bs = document.getElementById("betStats");
+  stat(bs, pct(V.top_sofar), `Top 10 so far, ${V.days} trading days in`, "pos");
+  stat(bs, pct(V.all_sofar), "Average stock so far");
+  stat(bs, pct(V.bot_sofar), "Bottom 10 so far", "neg");
+  document.getElementById("recText").textContent = `Across ${R.n_weeks} weeks and ${R.n_preds.toLocaleString("en-US")} predictions, the cones hold about as often as they claim to, except in crashes, when everything moves together. Calling direction is harder: the model is right only a little more often than a coin. That small edge, applied to 101 stocks every week, is what separates the top 10 from the bottom 10.`;
+  const rs = document.getElementById("recStats");
+  stat(rs, R.inside + "%", "Outcomes inside an 80% cone");
+  stat(rs, R.dir + "%", "Direction right vs the average stock");
+  stat(rs, R.spread_win + "%", "Weeks the top 10 beat the bottom 10");
+  document.getElementById("foot").textContent = `Method: gradient-boosted model on price and volume features, retrained each January on earlier data only and tested on the year after, 2019 to ${D.asof.slice(0, 4)}. Cones are 10th–90th percentile forecasts, recalibrated on a held-out year. Groups are rebuilt weekly and shown before trading costs. Universe is today's S&P 100, which flatters older results. Data to ${day(D.asof, { day: "numeric", month: "short", year: "numeric" })}. For education, not investment advice.`;
+  const sel = document.getElementById("ticker");
+  SECTORS.forEach(s => { const og = document.createElement("optgroup"); og.label = s; Object.keys(D.stocks).filter(t => D.stocks[t].s === s).sort().forEach(t => { const o = H("option", null, t); o.value = t; og.appendChild(o); }); sel.appendChild(og); });
+  sel.value = state.t; sel.addEventListener("change", () => { state.t = sel.value; drawFan(); });
+  document.querySelectorAll("#range button").forEach(b => b.addEventListener("click", () => { state.w = +b.dataset.w; document.querySelectorAll("#range button").forEach(z => z.setAttribute("aria-pressed", z === b)); drawFan(); }));
+}
+const drawAll = () => { drawHero(); drawNvda(); drawLearn(); drawFan(); drawCov(); drawRace(); };
+fetch("story.json").then(r => r.json()).then(d => {
+  D = d; text(); drawBoard(); drawKnows(); drawAll();
+  let t; addEventListener("resize", () => { clearTimeout(t); t = setTimeout(drawAll, 150); });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+  new MutationObserver(drawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+}).catch(() => { document.getElementById("dek").textContent = "Couldn't load the data. Refresh to try again."; });
+</script>

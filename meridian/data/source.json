@@ -1,0 +1,13 @@
+{
+  "title": "Online Retail II",
+  "creator": "Daqing Chen",
+  "publisher": "UCI Machine Learning Repository",
+  "doi": "10.24432/C5CG6D",
+  "source": "https://archive.ics.uci.edu/dataset/502/online+retail+ii",
+  "download": "https://archive.ics.uci.edu/static/public/502/online+retail+ii.zip",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "archive_sha256": "572e36277c2390fbfde10664750731e0a86f55e33470d91919085f0408e67bfb",
+  "analysis_end_exclusive": "2011-12-01",
+  "note": "Historical data. Meridian is a fictional presentation brand, not the retailer. December 2011 is excluded because the source stops on 9 December."
+}

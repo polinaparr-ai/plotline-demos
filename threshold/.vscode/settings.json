@@ -1,0 +1,22 @@
+{
+  "files.exclude": {
+    ".env": true,
+    ".venv": true,
+    ".plotline": true,
+    "**/__pycache__": true,
+    "shots": true,
+    ".dockerignore": true,
+    ".gitignore": true,
+    "Dockerfile": true,
+    "docker-compose.yml": true,
+    "8_published/threshold/assets": true,
+    "8_published/threshold/sdk": true
+  },
+  "search.exclude": { "1_data/raw": true, "1_data/warehouse.duckdb": true },
+  "explorer.sortOrder": "default",
+  "explorer.compactFolders": false,
+  "workbench.editor.enablePreview": false,
+  "files.associations": { "*.sql": "sql" },
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "terminal.integrated.cwd": "${workspaceFolder}"
+}

@@ -1,0 +1,7 @@
+duckdb>=1.1
+pandas>=2.0
+pyarrow>=14
+numpy
+scipy
+pyyaml
+anthropic>=0.125,<1   # tested with 0.125; 1.x has breaking changes

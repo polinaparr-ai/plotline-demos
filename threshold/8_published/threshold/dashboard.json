@@ -1,0 +1,411 @@
+{
+  "dashboard_id": "uk_housing_threshold",
+  "version": 3,
+  "content_hash": "09988853dac302e5",
+  "title": "Threshold · UK housing market monitor",
+  "published_at": "2026-11-24T14:11:03",
+  "published_by": "Housing analytics team",
+  "data_sources": [
+    {
+      "table": "analytics.sales",
+      "origin": "HM Land Registry Price Paid Data, OGL v3.0",
+      "rows": 2687952
+    },
+    {
+      "table": "ref.district_region",
+      "origin": "ONS LAD to Region lookup, December 2024"
+    },
+    {
+      "table": "ref.sdlt_bands",
+      "origin": "gov.uk SDLT rates"
+    }
+  ],
+  "coverage": "England and Wales, completions January 2023 to September 2026",
+  "freshness": {
+    "extract_date": "2026-10-28",
+    "complete_through": "2025-12-01",
+    "provisional_from": "2026-01-01",
+    "note": "Land Registry adds sales as they are registered. Months from January 2026 are provisional and will rise as late registrations arrive.",
+    "latest_sale": "2026-09-30"
+  },
+  "metrics": [
+    "median_price",
+    "sales_count"
+  ],
+  "dimensions": [
+    "district",
+    "is_new_build",
+    "price_band",
+    "property_type",
+    "region",
+    "sale_month"
+  ],
+  "filters": {
+    "region": [
+      "All",
+      "East Midlands",
+      "East of England",
+      "London",
+      "North East",
+      "North West",
+      "South East",
+      "South West",
+      "Wales",
+      "West Midlands",
+      "Yorkshire and The Humber"
+    ],
+    "property_type": [
+      "All",
+      "Detached",
+      "Semi-detached",
+      "Terraced",
+      "Flat/maisonette"
+    ]
+  },
+  "tabs": [
+    {
+      "id": "market",
+      "title": "Market",
+      "heading": "England & Wales housing market",
+      "charts": [
+        "sales_monthly",
+        "median_price_monthly",
+        "region_price_change"
+      ]
+    },
+    {
+      "id": "stamp_duty",
+      "title": "Stamp duty",
+      "heading": "The April 2025 stamp duty cliff",
+      "charts": [
+        "band_vs_expected",
+        "pullforward_by_band",
+        "sdlt_increase",
+        "band_monthly"
+      ]
+    },
+    {
+      "id": "places",
+      "title": "Places",
+      "heading": "Where prices moved",
+      "charts": [
+        "district_movers",
+        "new_build_premium"
+      ]
+    }
+  ],
+  "charts": [
+    {
+      "id": "sales_monthly",
+      "type": "bar",
+      "title": "Sales per month",
+      "query": "queries/market_monthly.sql",
+      "data": "data/market_monthly.parquet",
+      "metrics": [
+        "sales_count"
+      ],
+      "dimensions": [
+        "sale_month",
+        "region",
+        "property_type"
+      ],
+      "filters": [
+        "region",
+        "property_type"
+      ],
+      "description": "Market sales by completion month. Months from January 2026 are provisional (registration lag).",
+      "tab": "market",
+      "data_columns": [
+        "sale_month",
+        "region",
+        "property_type",
+        "sales_count",
+        "median_price",
+        "new_build_share"
+      ],
+      "data_rows": 2475
+    },
+    {
+      "id": "median_price_monthly",
+      "type": "line",
+      "title": "Median price paid",
+      "query": "queries/market_monthly.sql",
+      "data": "data/market_monthly.parquet",
+      "metrics": [
+        "median_price"
+      ],
+      "dimensions": [
+        "sale_month",
+        "region",
+        "property_type"
+      ],
+      "filters": [
+        "region",
+        "property_type"
+      ],
+      "description": "Monthly median price. Moves with the mix of homes sold, as well as with values.",
+      "tab": "market",
+      "data_columns": [
+        "sale_month",
+        "region",
+        "property_type",
+        "sales_count",
+        "median_price",
+        "new_build_share"
+      ],
+      "data_rows": 2475
+    },
+    {
+      "id": "region_price_change",
+      "type": "dot",
+      "title": "Median price change by region, 2025 vs 2024",
+      "query": "queries/region_yoy.sql",
+      "methodology": "analysis/regional_price_change.py",
+      "data": "data/region_price_change.parquet",
+      "metrics": [
+        "median_price"
+      ],
+      "dimensions": [
+        "region"
+      ],
+      "filters": [],
+      "description": "Headline change with a 95% bootstrap interval, and the mix-adjusted change (property-type weighted).",
+      "tab": "market",
+      "data_columns": [
+        "region",
+        "sales_2024",
+        "sales_2025",
+        "median_2024",
+        "median_2025",
+        "median_change",
+        "ci_low",
+        "ci_high",
+        "mix_adjusted_change",
+        "significant"
+      ],
+      "data_rows": 11
+    },
+    {
+      "id": "band_vs_expected",
+      "type": "heatmap",
+      "title": "Sales against expected, by price band (England)",
+      "query": "queries/price_band_monthly.sql",
+      "methodology": "analysis/stamp_duty_pullforward.py",
+      "data": "data/pullforward_monthly.parquet",
+      "metrics": [
+        "sales_count"
+      ],
+      "dimensions": [
+        "sale_month",
+        "price_band"
+      ],
+      "filters": [],
+      "description": "Each cell is actual sales relative to a seasonal baseline from 2023–24. Red is above expected, blue below.",
+      "tab": "stamp_duty",
+      "data_columns": [
+        "sale_month",
+        "price_band",
+        "actual",
+        "expected"
+      ],
+      "data_rows": 288
+    },
+    {
+      "id": "pullforward_by_band",
+      "type": "bar",
+      "title": "Extra sales before the deadline, and the dip after",
+      "query": "queries/price_band_monthly.sql",
+      "methodology": "analysis/stamp_duty_pullforward.py",
+      "data": "data/pullforward_summary.parquet",
+      "metrics": [
+        "sales_count"
+      ],
+      "dimensions": [
+        "price_band"
+      ],
+      "filters": [],
+      "description": "Excess sales Jan–Mar 2025 compared with the shortfall Apr–Jun 2025, by price band (England).",
+      "tab": "stamp_duty",
+      "data_columns": [
+        "price_band",
+        "excess_jan_mar",
+        "shortfall_apr_jun",
+        "noise_sd",
+        "net",
+        "payback",
+        "march_actual",
+        "march_expected",
+        "march_vs_expected",
+        "march_z"
+      ],
+      "data_rows": 8
+    },
+    {
+      "id": "sdlt_increase",
+      "type": "bar",
+      "title": "Extra stamp duty from 1 April 2025",
+      "methodology": "analysis/stamp_duty_pullforward.py",
+      "data": "data/sdlt_increase.parquet",
+      "metrics": [],
+      "dimensions": [],
+      "filters": [],
+      "description": "Increase in Stamp Duty at example prices, standard buyer vs first-time buyer, from ref.sdlt_bands.",
+      "tab": "stamp_duty",
+      "data_columns": [
+        "price",
+        "standard_before",
+        "standard_after",
+        "standard_increase",
+        "first_time_buyer_before",
+        "first_time_buyer_after",
+        "first_time_buyer_increase"
+      ],
+      "data_rows": 8
+    },
+    {
+      "id": "band_monthly",
+      "type": "line",
+      "title": "Monthly sales by price band",
+      "query": "queries/price_band_monthly.sql",
+      "data": "data/price_band_monthly.parquet",
+      "metrics": [
+        "sales_count"
+      ],
+      "dimensions": [
+        "sale_month",
+        "price_band",
+        "region"
+      ],
+      "filters": [
+        "region"
+      ],
+      "description": "Three bands that tell the story: untouched by the change (under £125k), new 2% charge (£125k–250k) and lost first-time buyer relief (£300k–425k).",
+      "tab": "stamp_duty",
+      "data_columns": [
+        "sale_month",
+        "price_band",
+        "region",
+        "sales_count"
+      ],
+      "data_rows": 3960
+    },
+    {
+      "id": "district_movers",
+      "type": "table",
+      "title": "Local authorities: biggest price movers",
+      "query": "queries/district_movers.sql",
+      "data": "data/district_movers.parquet",
+      "metrics": [
+        "median_price",
+        "sales_count"
+      ],
+      "dimensions": [
+        "district",
+        "region"
+      ],
+      "filters": [
+        "region"
+      ],
+      "description": "Authorities with at least 500 sales in both years, ranked by change in median price.",
+      "tab": "places",
+      "data_columns": [
+        "district",
+        "region",
+        "sales_2024",
+        "sales_2025",
+        "median_2024",
+        "median_2025",
+        "median_change",
+        "sales_change"
+      ],
+      "data_rows": 316
+    },
+    {
+      "id": "new_build_premium",
+      "type": "bar",
+      "title": "New-build premium by property type, 2025",
+      "query": "queries/new_build_premium.sql",
+      "data": "data/new_build_premium.parquet",
+      "metrics": [
+        "median_price",
+        "sales_count"
+      ],
+      "dimensions": [
+        "property_type",
+        "is_new_build",
+        "region"
+      ],
+      "filters": [
+        "region"
+      ],
+      "description": "Median price of new builds against existing homes of the same type.",
+      "tab": "places",
+      "data_columns": [
+        "region",
+        "property_type",
+        "is_new_build",
+        "sales_count",
+        "median_price"
+      ],
+      "data_rows": 88
+    }
+  ],
+  "key_findings": {
+    "regional_price_change": {
+      "england_wales_median_change": 0.030756013745704358,
+      "england_wales_mix_adjusted": 0.013677193845264377,
+      "fastest_region": "Wales",
+      "slowest_region": "London",
+      "not_significant": [
+        "East Midlands",
+        "London",
+        "South West"
+      ]
+    },
+    "stamp_duty_pullforward": {
+      "excess_jan_mar": 69109,
+      "shortfall_apr_jun": 32586,
+      "payback": 0.47151921440443,
+      "march_vs_expected": 0.9103041829694922,
+      "min_march_z": 0.5759292989626298,
+      "band_most_affected": "06 £500k–625k"
+    }
+  },
+  "analyst_notes": {
+    "hypotheses_tested": [
+      {
+        "hypothesis": "The March 2025 spike was caused by the Stamp Duty change on 1 April 2025.",
+        "status": "supported",
+        "evidence": "Spike concentrated in bands where tax rose; under-£125k band (no change) stayed at its baseline."
+      },
+      {
+        "hypothesis": "The spike was entirely sales moved forward in time.",
+        "status": "partly supported",
+        "evidence": "Shortfall in Apr–Jun 2025 recovers about half the Jan–Mar excess. The rest may have been paid back later or reflects extra demand."
+      },
+      {
+        "hypothesis": "Prices fell after the change.",
+        "status": "not supported",
+        "evidence": "The April 2025 median dropped because cheaper homes made up more of the sales. By mid-2025 the median was back to its 2024 level."
+      }
+    ],
+    "limitations": [
+      "Buyer type is not recorded: first-time buyers are inferred from price bands.",
+      "Months from January 2026 are provisional because of registration lag.",
+      "Median price is not a house price index; mix of homes sold moves it.",
+      "Wales has Land Transaction Tax, so Stamp Duty analysis uses England only."
+    ],
+    "next_questions": [
+      "Did payback continue after June 2025?",
+      "Which local authorities had the largest spike relative to normal?",
+      "Has the new-build share changed since the tax change?"
+    ]
+  },
+  "semantic_layer": "semantic_layer.json",
+  "ui_actions": [
+    "open_tab",
+    "set_filters",
+    "highlight_chart",
+    "add_tab"
+  ]
+}

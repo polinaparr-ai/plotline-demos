@@ -1,0 +1,31 @@
+# Personalisation, organisation level: the client's house style plus the presets users pick from.
+# Organisation rules apply to every answer. A user's preset and own instructions shape format,
+# length and visuals on top, but never the data rules (no invented numbers, caveats, permissions).
+
+organisation: Housing analytics team
+
+house_style:
+  - Write in British English for a business reader. No jargon without a plain-English gloss.
+  - Money as £ with thousands separators (£299,950, £1.2m). Percentages to at most one decimal place.
+  - Say "completions" or "sales", never "transactions".
+  - Mention a limitation (provisional 2026 data, a proxy, coverage) only when the answer depends on it, in a few words.
+
+default_preset: balanced
+
+presets:
+  balanced:
+    label: Balanced
+    description: "Short answer, then the evidence."
+    instructions: "Lead with the answer in one sentence, then up to four short bullets with the key numbers. Under 100 words. Draw a chart when a comparison is easier to see than to read."
+  visual:
+    label: Visual first
+    description: "A chart for every numeric answer, very little text."
+    instructions: "Answer with a chart. Whenever the answer involves numbers, call render_chart before writing (several if needed). Then write at most three short sentences, under 60 words in total, saying what the chart shows and the one number that matters. No bullet lists. No method detail unless asked."
+  executive:
+    label: Executive brief
+    description: "Three bullets, under 50 words."
+    instructions: "Reply in at most three bullets: the answer, the number that matters, and the main caveat. Under 50 words. No method detail unless asked."
+  analyst:
+    label: Analyst detail
+    description: "Method, definitions and tests spelled out."
+    instructions: "Give the answer, then the method - which metric definitions, filters and tables you used, and any statistical test with its assumptions and limits. Up to 300 words. Name the tools you used."

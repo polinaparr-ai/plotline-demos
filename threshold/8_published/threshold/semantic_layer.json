@@ -1,0 +1,133 @@
+{
+  "model": {
+    "table": "analytics.sales",
+    "default_filters": [
+      {
+        "name": "market_sales_only",
+        "sql": "ppd_category = 'A'",
+        "reason": "Category B includes repossessions, sales to companies and other non-market transfers."
+      }
+    ],
+    "time_dimension": "sale_month",
+    "freshness": {
+      "extract_date": "2026-10-28",
+      "complete_through": "2025-12-01",
+      "provisional_from": "2026-01-01",
+      "note": "Land Registry adds sales as they are registered. Months from January 2026 are provisional and will rise as late registrations arrive."
+    }
+  },
+  "metrics": {
+    "sales_count": {
+      "label": "Sales",
+      "description": "Number of residential sales at full market value, by completion month.",
+      "sql": "COUNT(*)",
+      "format": "integer",
+      "owner": "Housing analytics team",
+      "approved": "2026-11-02",
+      "caveats": [
+        "Provisional from January 2026 (registration lag).",
+        "Counts completions, not agreed sales. Completions trail agreed sales by roughly 3–4 months."
+      ]
+    },
+    "median_price": {
+      "label": "Median price",
+      "description": "Median price paid for residential sales at full market value. Preferred over the mean because a few very expensive sales skew the average.",
+      "sql": "MEDIAN(price_gbp)",
+      "format": "gbp",
+      "owner": "Housing analytics team",
+      "approved": "2026-11-02",
+      "caveats": [
+        "Changes in the mix of what sells (more flats, fewer detached houses) move the median even when no individual home changes in value. It is not a house price index."
+      ]
+    },
+    "mean_price": {
+      "label": "Mean price",
+      "description": "Mean price paid. Shown only when comparing with published averages.",
+      "sql": "AVG(price_gbp)",
+      "format": "gbp",
+      "owner": "Housing analytics team",
+      "approved": "2026-11-02"
+    },
+    "total_value": {
+      "label": "Value of sales",
+      "description": "Total price paid across sales at full market value.",
+      "sql": "SUM(price_gbp)",
+      "format": "gbp",
+      "owner": "Housing analytics team",
+      "approved": "2026-11-02"
+    },
+    "new_build_share": {
+      "label": "New-build share",
+      "description": "Share of sales where the property was newly built.",
+      "sql": "AVG(CASE WHEN is_new_build THEN 1.0 ELSE 0.0 END)",
+      "format": "percent",
+      "owner": "Housing analytics team",
+      "approved": "2026-11-02",
+      "caveats": [
+        "New builds are often registered later than existing homes, so recent months understate this share."
+      ]
+    },
+    "leasehold_share": {
+      "label": "Leasehold share",
+      "description": "Share of sales that were leasehold.",
+      "sql": "AVG(CASE WHEN tenure = 'Leasehold' THEN 1.0 ELSE 0.0 END)",
+      "format": "percent",
+      "owner": "Housing analytics team",
+      "approved": "2026-11-02"
+    }
+  },
+  "dimensions": {
+    "sale_month": {
+      "label": "Month",
+      "sql": "sale_month",
+      "type": "time"
+    },
+    "sale_quarter": {
+      "label": "Quarter",
+      "sql": "CAST(date_trunc('quarter', sale_month) AS DATE)",
+      "type": "time"
+    },
+    "sale_year": {
+      "label": "Year",
+      "sql": "year(sale_month)",
+      "type": "time"
+    },
+    "region": {
+      "label": "Region",
+      "sql": "region"
+    },
+    "country": {
+      "label": "Country",
+      "sql": "country"
+    },
+    "district": {
+      "label": "Local authority",
+      "sql": "district"
+    },
+    "property_type": {
+      "label": "Property type",
+      "sql": "property_type"
+    },
+    "tenure": {
+      "label": "Tenure",
+      "sql": "tenure"
+    },
+    "is_new_build": {
+      "label": "New build",
+      "sql": "is_new_build"
+    },
+    "price_band": {
+      "label": "Price band (SDLT thresholds)",
+      "sql": "price_band"
+    },
+    "postcode_district": {
+      "label": "Postcode district",
+      "sql": "postcode_district"
+    }
+  },
+  "glossary": {
+    "SDLT": "Stamp Duty Land Tax, paid by buyers in England.",
+    "completion": "The date ownership transfers. Price Paid Data is dated by completion, not by when the sale was agreed.",
+    "pull-forward": "Sales that would have happened later but completed early to beat a tax change."
+  }
+}

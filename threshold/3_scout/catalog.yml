@@ -1,0 +1,97 @@
+# Scout catalog — the documented map of the client's warehouse.
+#
+# Scout builds the skeleton of this file by profiling the warehouse (tables, columns,
+# types, row counts, value ranges). People add the parts a profiler can't know:
+# what a row means, which table to start from, and the traps.
+# The dashboard assistant searches this through the `search_schema` tool.
+
+warehouse: 1_data/warehouse.duckdb   # stands in for the client's Snowflake / BigQuery / Postgres
+owner: Housing analytics team
+
+tables:
+  analytics.sales:
+    summary: One row per residential property sale registered with HM Land Registry, England and Wales, Jan 2023 onwards. Start here.
+    grain: one registered sale (transaction)
+    access: assistant_readable
+    source: HM Land Registry Price Paid Data (OGL v3.0), modelled by 2_models/analytics_sales.sql
+    columns:
+      transaction_id: Land Registry transaction reference.
+      price_gbp: Price stated on the transfer deed, in GBP.
+      sale_date: Date of completion as stated on the transfer deed.
+      sale_month: First day of the completion month. Use for monthly trends.
+      postcode: Full postcode of the property.
+      postcode_district: Outward code of the postcode, e.g. SW11.
+      property_type: Detached, Semi-detached, Terraced, Flat/maisonette or Other.
+      is_new_build: True when the property was newly built at the time of sale.
+      tenure: Freehold or Leasehold.
+      town_city: Post town.
+      district: Local authority. Pre-2023 Somerset, North Yorkshire and Cumbria councils are mapped to their successors.
+      county: County as recorded by Land Registry.
+      region: ONS region (England) or Wales.
+      country: England or Wales.
+      ppd_category: A = standard sale at full market value. B = additional price paid (repossessions, buy-to-lets, sales to companies, transfers under power of sale).
+      price_band: Price band aligned to Stamp Duty thresholds, e.g. '04 £300k–425k'. The leading number sorts the bands.
+    notes:
+      - Always filter ppd_category = 'A' for market prices and volumes. Category B is about 17% of rows and includes non-market transfers. The semantic layer applies this for you.
+      - Registration lag. Sales appear when they are registered, often 2–6 months after completion and sometimes longer. Months from January 2026 are provisional and will be revised upwards. Don't read a 2026 fall in volumes as a market fall without saying so.
+      - Buyer type (first-time buyer, investor, cash or mortgage) is NOT recorded. Use price bands around Stamp Duty thresholds as a proxy, and say that it is a proxy.
+      - Wales has Land Transaction Tax, not Stamp Duty. Compare England with England when looking at SDLT effects.
+      - Scotland and Northern Ireland are not covered.
+
+  raw.price_paid:
+    summary: The Land Registry file as published, with house numbers and street names. Headerless in the source CSV; column names come from Land Registry's documentation.
+    grain: one record (addition) in the published file
+    access: restricted   # address-level detail: blocked for the dashboard assistant
+    columns:
+      transaction_id: Transaction reference.
+      price: Price paid.
+      transfer_date: Completion date.
+      postcode: Postcode.
+      property_type: D, S, T, F or O.
+      old_new: Y for a new build, N otherwise.
+      duration: F freehold, L leasehold.
+      paon: Primary addressable object name (house number or name).
+      saon: Secondary addressable object name (flat number).
+      street: Street.
+      locality: Locality.
+      town_city: Town or city.
+      district: Local authority at registration.
+      county: County.
+      ppd_category: A or B, see analytics.sales.
+      record_status: A addition, C change, D deletion. The yearly files contain additions only.
+    notes:
+      - Use analytics.sales instead. This table is kept for lineage and is not readable by the assistant.
+
+  ref.district_region:
+    summary: Lookup from Land Registry district name to ONS region and country.
+    grain: one local authority district
+    access: assistant_readable
+    source: ONS Local Authority District to Region (December 2024) Lookup in England, plus Welsh authorities
+    columns:
+      district: District name as written by Land Registry (upper case).
+      lad_code: ONS local authority code, where the name matched.
+      region: ONS region, or Wales.
+      country: England or Wales.
+
+  ref.district_successor:
+    summary: Councils abolished in April 2023 and the unitary authority that replaced them.
+    grain: one abolished district
+    access: assistant_readable
+    columns:
+      old_district: District name used on older registrations.
+      district: Successor authority.
+
+  ref.sdlt_bands:
+    summary: Stamp Duty Land Tax residential bands in England before and after 1 April 2025, for standard and first-time buyers.
+    grain: one band of one regime
+    access: assistant_readable
+    source: gov.uk Stamp Duty Land Tax rates
+    columns:
+      regime: "Either '2022-09-23 to 2025-03-31' or 'from 2025-04-01'."
+      buyer_type: standard or first_time_buyer.
+      lower_gbp: Band lower bound.
+      upper_gbp: Band upper bound (null = no upper bound).
+      rate: Marginal rate.
+    notes:
+      - First-time buyer relief only applies when the whole price is at or below the cap (£625k before April 2025, £500k after). Above the cap, standard rates apply.
+      - Additional-property surcharges are not included.

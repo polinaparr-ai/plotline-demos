@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{TITLE}}</title>
+<meta name="plotline:dashboard" content="dashboard.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23164e40'/%3E%3Cpath d='M6 22h6v-6h8v-6h6' stroke='%23c8e3bc' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/dashboard.css">
+<link rel="stylesheet" href="sdk/plotline-chat.css">
+<script src="assets/plotly.min.js"></script>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="brand">
+    <span class="logo"><svg viewBox="0 0 32 32"><path d="M6 22h6v-6h8v-6h6" /></svg></span>
+    <div><strong>Threshold</strong><span>Housing market monitor</span></div>
+  </div>
+  <nav>
+    <div class="nav-label">Dashboard</div>
+    {{NAV}}
+    <div id="custom-nav" hidden><div class="nav-label">Your analyses</div></div>
+    <div class="nav-label">Behind the dashboard</div>
+    <button class="nav-item" data-tab="source"><span class="nav-ico ico-code"></span>Source</button>
+    <button class="nav-item" data-tab="architecture"><span class="nav-ico ico-arch"></span>How the assistant works</button>
+    <button class="nav-item" data-tab="findings"><span class="nav-ico ico-bookmark"></span>Saved findings <span class="nav-count" id="findings-count"></span></button>
+  </nav>
+  <div class="sidebar-foot">
+    <div class="foot-row"><span class="pulse"></span>Sales to {{LATEST_SALE}}</div>
+    <div class="foot-small">HM Land Registry (OGL) · v{{VERSION}} · <b>Plotline</b></div>
+  </div>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="crumbs"><span>Housing analytics</span><i>/</i><strong>Threshold</strong></div>
+    <div class="filters" id="filters">
+      <label><span>Region</span><select id="f-region"></select></label>
+      <label><span>Property type</span><select id="f-type"></select></label>
+      <button class="link-btn" id="f-reset" hidden>Reset</button>
+    </div>
+    <div class="top-right">
+      <label class="role"><span>Viewing as</span>
+        <select id="role">
+          <option value="viewer">Viewer · level 1</option>
+          <option value="analyst">Analyst · levels 1–2</option>
+          <option value="data_scientist" selected>Data scientist · levels 1–3</option>
+        </select>
+      </label>
+      <button class="ask-btn" id="ask-toggle"><span class="spark"></span>Ask this dashboard</button>
+    </div>
+  </header>
+
+  <main id="content">
+    {{SECTIONS}}
+
+    <section class="tab" id="tab-source" data-tab-panel="source" hidden>
+      <div class="page-head"><h1>Source</h1></div>
+      <ol class="pipeline" id="pipeline">
+        <li data-open-source="1_data/samples/raw_as_published.csv"><b>1 · Data</b></li>
+        <li data-open-source="2_models/analytics_sales.sql"><b>2 · Models</b></li>
+        <li data-open-source="3_scout/catalog.yml"><b>3 · Scout</b></li>
+        <li data-open-source="4_semantic_layer/metrics.yml"><b>4 · Semantic layer</b></li>
+        <li data-open-source="5_sql/market_monthly.sql"><b>5 · SQL</b></li>
+        <li data-open-source="6_python/stamp_duty_pullforward.py"><b>6 · Python</b></li>
+        <li data-open-source="7_dashboard/build_dashboard.py"><b>7 · Dashboard</b></li>
+        <li data-open-source="dashboard.json"><b>8 · Published</b></li>
+        <li data-open-source="plotline/tools.py"><b>Assistant</b></li>
+      </ol>
+      <div class="source-split">
+        <div class="tree" id="source-tree"><div class="muted">Loading files…</div></div>
+        <div class="viewer"><div class="viewer-head" id="viewer-head"></div><div class="viewer-body" id="viewer-body"></div></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-architecture" data-tab-panel="architecture" hidden>
+      <div class="page-head"><h1>How the assistant works</h1></div>
+      <div class="arch-wrap">
+        <svg class="arch" id="arch" viewBox="0 0 1000 600" role="img" aria-label="Plotline dashboard assistant architecture">
+          <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+          <g class="node" id="arch-ui"><rect x="300" y="14" width="400" height="74" rx="12"/>
+            <text x="500" y="40" class="t1">Published dashboard</text>
+            <text x="500" y="60" class="t2">index.html · plotline-chat.js · Plotly click context</text>
+            <text x="500" y="76" class="t3">executes UI actions: open tab · set filters · highlight · add tab</text></g>
+          <path class="edge" id="e-ui-api" d="M500 88 V118" marker-end="url(#ah)"/>
+          <text x="512" y="108" class="lbl">question + tab, filters, selected point</text>
+          <g class="node" id="arch-api"><rect x="300" y="120" width="400" height="60" rx="12"/>
+            <text x="500" y="145" class="t1">Plotline API · /api/dashboard/chat</text>
+            <text x="500" y="165" class="t2">auth · role → allowed tools · conversation history · SSE stream</text></g>
+          <path class="edge" id="e-api-llm" d="M500 180 V208" marker-end="url(#ah)"/>
+          <g class="node node-llm" id="arch-llm"><rect x="300" y="210" width="400" height="62" rx="12"/>
+            <text x="500" y="236" class="t1">Claude · tool orchestration</text>
+            <text x="500" y="256" class="t2">interpret · pick tools · investigate · answer with sources</text></g>
+          <path class="edge" id="e-llm-context" d="M500 272 V290 H90 V318" marker-end="url(#ah)"/>
+          <path class="edge" id="e-llm-semantic" d="M500 272 V290 H253 V318" marker-end="url(#ah)"/>
+          <path class="edge" id="e-llm-scout" d="M500 272 V290 H416 V318" marker-end="url(#ah)"/>
+          <path class="edge" id="e-llm-query" d="M500 272 V290 H584 V318" marker-end="url(#ah)"/>
+          <path class="edge" id="e-llm-python" d="M500 272 V290 H747 V318" marker-end="url(#ah)"/>
+          <path class="edge" id="e-llm-dashboard" d="M500 272 V290 H910 V318" marker-end="url(#ah)"/>
+          <g class="lvl"><rect x="14" y="300" width="320" height="0"/></g>
+          <g class="node tool" id="arch-context"><rect x="14" y="320" width="152" height="104" rx="10"/>
+            <text x="90" y="350" class="t1">Analysis context</text><text x="90" y="367" class="t2">dashboard.json</text>
+            <text x="90" y="381" class="t2">SQL · methodology</text><text x="90" y="397" class="t4">get_dashboard_context</text><text x="90" y="408" class="t4">get_chart_data</text><text x="90" y="419" class="t4">get_source_query</text>
+            <text x="150" y="333" class="lv">L1</text></g>
+          <g class="node tool" id="arch-semantic"><rect x="177" y="320" width="152" height="104" rx="10"/>
+            <text x="253" y="350" class="t1">Semantic layer</text><text x="253" y="367" class="t2">approved metric</text>
+            <text x="253" y="381" class="t2">definitions → SQL</text><text x="253" y="400" class="t4">get_metric_definition</text><text x="253" y="413" class="t4">query_metric</text>
+            <text x="313" y="333" class="lv">L1–2</text></g>
+          <g class="node tool" id="arch-scout"><rect x="340" y="320" width="152" height="104" rx="10"/>
+            <text x="416" y="350" class="t1">Scout</text><text x="416" y="367" class="t2">find &amp; understand</text>
+            <text x="416" y="381" class="t2">tables beyond the page</text><text x="416" y="400" class="t4">search_schema</text><text x="416" y="413" class="t4">describe_table</text>
+            <text x="476" y="333" class="lv">L2</text></g>
+          <g class="node tool" id="arch-query"><rect x="503" y="320" width="152" height="104" rx="10"/>
+            <text x="579" y="350" class="t1">Query engine</text><text x="579" y="367" class="t2">read-only SQL · DuckDB</text>
+            <text x="579" y="381" class="t2">allow-list · row cap</text><text x="579" y="400" class="t4">execute_sql</text>
+            <text x="639" y="333" class="lv">L2</text></g>
+          <g class="node tool" id="arch-python"><rect x="666" y="320" width="152" height="104" rx="10"/>
+            <text x="742" y="350" class="t1">Python sandbox</text><text x="742" y="367" class="t2">separate process</text>
+            <text x="742" y="381" class="t2">no network · 20s limit</text><text x="742" y="400" class="t4">execute_python</text>
+            <text x="802" y="333" class="lv">L3</text></g>
+          <g class="node tool" id="arch-dashboard"><rect x="829" y="320" width="157" height="104" rx="10"/>
+            <text x="907" y="350" class="t1">Dashboard control</text><text x="907" y="367" class="t2">charts &amp; structured UI</text>
+            <text x="907" y="381" class="t2">actions, never raw JS</text><text x="907" y="397" class="t4">navigate_dashboard</text><text x="907" y="408" class="t4">render_chart</text><text x="907" y="419" class="t4">save_finding</text>
+            <text x="966" y="333" class="lv">L1</text></g>
+          <path class="edge" id="e-context-extract" d="M90 424 V478" marker-end="url(#ah)"/>
+          <path class="edge" id="e-semantic-warehouse" d="M253 424 V478" marker-end="url(#ah)"/>
+          <path class="edge" id="e-scout-warehouse" d="M416 424 V478" marker-end="url(#ah)"/>
+          <path class="edge" id="e-query-warehouse" d="M579 424 V478" marker-end="url(#ah)"/>
+          <path class="edge" id="e-python-warehouse" d="M742 424 V478" marker-end="url(#ah)"/>
+          <path class="edge" id="e-dashboard-findings" d="M907 424 V478" marker-end="url(#ah)"/>
+          <path class="edge" id="e-dashboard-ui" d="M986 372 H994 V51 H702" marker-end="url(#ah)"/>
+          <g class="node store" id="arch-extract"><rect x="14" y="480" width="152" height="62" rx="10"/>
+            <text x="90" y="505" class="t1">Published files</text><text x="90" y="524" class="t2">data · queries · analysis</text></g>
+          <g class="node store" id="arch-warehouse"><rect x="177" y="480" width="641" height="62" rx="10"/>
+            <text x="497" y="505" class="t1">Client warehouse · read-only</text>
+            <text x="497" y="524" class="t2">analytics.sales · ref.* allowed   ·   raw.price_paid (addresses) blocked by policy</text></g>
+          <g class="node store" id="arch-findings"><rect x="829" y="480" width="157" height="62" rx="10"/>
+            <text x="907" y="505" class="t1">Findings store</text><text x="907" y="524" class="t2">reviewed, reusable</text></g>
+
+        </svg>
+        <aside class="arch-log">
+          <h3>Live trace</h3>
+          <p class="muted" id="arch-empty">—</p>
+          <ol id="arch-log"></ol>
+        </aside>
+      </div>
+      <div class="levels">
+        <div><b>Level 1 · Understand</b><p>Charts, method, definitions</p></div>
+        <div><b>Level 2 · Interrogate</b><p>New breakdowns via the semantic layer and SQL</p></div>
+        <div><b>Level 3 · Extend</b><p>Statistics and models in Python</p></div>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-findings" data-tab-panel="findings" hidden>
+      <div class="page-head"><h1>Saved findings</h1></div>
+      <div id="findings-list" class="findings"></div>
+    </section>
+
+    <div id="custom-sections"></div>
+  </main>
+</div>
+
+<script>window.THRESHOLD = {{PAYLOAD}};</script>
+<script src="assets/dashboard.js"></script>
+<script src="sdk/plotline-chat.js"></script>
+<script>
+  Plotline.init({
+    dashboardId: THRESHOLD.manifest.dashboard_id,
+    dashboardVersion: THRESHOLD.manifest.version,
+    endpoint: "/api/dashboard/chat",
+    conversational: true
+  });
+</script>
+</body>
+</html>

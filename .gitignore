@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.DS_Store
+.env
+*.duckdb
+*.duckdb.wal
+**/raw/
+threshold/.plotline/
+threshold/shots/

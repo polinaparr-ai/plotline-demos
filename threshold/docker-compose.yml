@@ -1,0 +1,33 @@
+# One environment, two containers:
+#   plotline  dashboard, API, LLM access, MCP over HTTP (/mcp), publish pipeline
+#   sandbox   Python worker for level-3 analysis: no internet route, read-only, no secrets
+#
+#   docker compose up --build        then open http://localhost:8765
+services:
+  plotline:
+    build: .
+    env_file: .env                     # ANTHROPIC_API_KEY, PLOTLINE_MCP_TOKEN, PLOTLINE_ACCESS_CODE
+    environment:
+      PLOTLINE_SANDBOX_URL: http://sandbox:9000
+    ports: ["8765:8765"]
+    volumes: [data:/app/1_data, state:/app/.plotline]
+    networks: [public, internal]
+    depends_on: [sandbox]
+    restart: unless-stopped
+
+  sandbox:
+    build: .
+    command: python -m plotline.sandbox_worker
+    read_only: true
+    tmpfs: [/tmp]
+    networks: [internal]               # internal network: no route to the internet
+    restart: unless-stopped
+
+networks:
+  public: {}
+  internal:
+    internal: true
+
+volumes:
+  data: {}
+  state: {}

@@ -1,0 +1,7 @@
+.venv/
+.env
+.plotline/
+1_data/raw/
+1_data/warehouse.duckdb
+shots/
+__pycache__/

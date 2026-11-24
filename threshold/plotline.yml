@@ -1,0 +1,65 @@
+# Plotline environment: everything one client's analytics needs, in one place.
+# The same folder runs locally (./run.sh) or in the cloud (docker compose / any small VM).
+# Secrets never go in this file: ANTHROPIC_API_KEY and PLOTLINE_MCP_TOKEN come from .env.
+
+environment: threshold-demo
+client: Housing analytics team (demo)
+
+# The numbered folders follow the story: data -> models -> Scout -> semantic layer -> SQL -> Python
+# -> dashboard code -> published output -> personalisation. plotline/ is the engine that runs it all.
+
+data:
+  raw: 1_data/raw                            # Land Registry CSVs exactly as published (no headers)
+  samples: 1_data/samples                    # small previews you can open in the IDE
+  ingest: 1_data/ingest.py                   # downloads the files and builds the warehouse
+  warehouse: 1_data/warehouse.duckdb         # stands in for the client's Snowflake / BigQuery / Postgres
+  refresh: monthly                           # Land Registry publishes on the 20th working day
+
+models:
+  sql: 2_models                              # SQL that turns raw rows into analysis-ready tables
+
+scout:
+  catalog: 3_scout/catalog.yml
+
+semantic_layer:
+  definitions: 4_semantic_layer/metrics.yml
+
+analysis:
+  sql: 5_sql
+  python: 6_python
+
+dashboards:
+  - id: uk_housing_threshold
+    build: 7_dashboard/build_dashboard.py
+    publish_to: 8_published/threshold
+
+personalisation:
+  house_style: 9_personalisation/house_style.yml   # organisation rules + presets; users choose their own on top
+
+llm:
+  provider: anthropic
+  model: claude-opus-5-5          # override with PLOTLINE_MODEL
+  effort: medium                  # override with PLOTLINE_EFFORT (low = faster and cheaper)
+  refusal_fallback: default
+  max_tool_rounds: 12
+
+access:
+  roles:
+    viewer: 1                     # understand
+    analyst: 2                    # + interrogate
+    data_scientist: 3             # + extend (Python)
+  allowed_tables: [analytics.sales, ref.district_region, ref.district_successor, ref.sdlt_bands]
+
+mcp:
+  # Scout MCP: the same tools, same policy, for Claude Desktop, Claude Code or any MCP client.
+  stdio: python plotline/mcp_server.py
+  http: /mcp                      # served by plotline/server.py; needs Authorization: Bearer $PLOTLINE_MCP_TOKEN
+  role: analyst
+  tools: [get_dashboard_context, get_metric_definition, get_chart_data, get_source_query,
+          search_schema, describe_table, query_metric, execute_sql]
+
+sandbox:
+  mode: local                     # local: sandbox-exec on macOS. service: separate no-internet container (docker compose)
+
+store:
+  path: .plotline/state.sqlite          # conversations, findings, preferences. Supabase Postgres in production
